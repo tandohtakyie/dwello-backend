@@ -1,5 +1,7 @@
 package app
 
+import config.configModule
+import config.mongoModule
 import config.propertyModule
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -16,7 +18,7 @@ fun main(args: Array<String>) {
 
 fun Application.module() {
     install(plugin = Koin) {
-        modules(modules = propertyModule)
+        modules(configModule, mongoModule, propertyModule)
     }
     configureRouting(
         getAvailablePropertiesUseCase = get(),

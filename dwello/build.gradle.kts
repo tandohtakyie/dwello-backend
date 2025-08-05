@@ -18,6 +18,8 @@ dependencies {
     implementation(libs.ktor.server.config.yaml)
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
+    implementation(libs.mongodb.driver)
+    implementation(libs.mongodb.driver.coroutine)
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

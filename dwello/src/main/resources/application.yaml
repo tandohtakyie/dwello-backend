@@ -4,3 +4,8 @@ ktor:
             - com.aimhigh.app.ApplicationKt.module
     deployment:
         port: 8080
+
+dwello:
+    mongo:
+        uri: ${MONGO_URI}
+        db: ${MONGO_DB}
