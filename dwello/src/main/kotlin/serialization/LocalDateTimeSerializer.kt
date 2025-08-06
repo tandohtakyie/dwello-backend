@@ -1,0 +1,4 @@
+package serialization
+
+class LocalDateTimeSerializer {
+}
