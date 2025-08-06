@@ -7,5 +7,5 @@ ktor:
 
 dwello:
     mongo:
-        uri: ${MONGO_URI}
-        db: ${MONGO_DB}
+        uri: ${MONGODB_CONNECTION_STRING}
+        db: ${DATABASE_NAME}
