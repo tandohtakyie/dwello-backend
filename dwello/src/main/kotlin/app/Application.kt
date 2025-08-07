@@ -2,7 +2,7 @@ package app
 
 import config.DatabaseConfig
 import di.appModule
-import dto.ApiResponse
+import dto.request.response.ApiResponse
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -21,7 +21,7 @@ import kotlinx.serialization.json.Json
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
-import routes.configurePropertyRoutes
+import routes.property.configurePropertyRoutes
 import utils.Constants
 
 fun main(args: Array<String>) {

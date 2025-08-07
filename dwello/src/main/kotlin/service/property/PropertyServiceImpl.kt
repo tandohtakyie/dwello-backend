@@ -1,11 +1,11 @@
-package service
+package service.property
 
-import dto.CreatePropertyRequest
-import dto.PaginatedResponse
-import dto.PropertyFilter
-import dto.UpdatePropertyRequest
-import model.Property
-import repository.PropertyRepository
+import dto.request.property.CreatePropertyRequest
+import dto.request.property.PaginatedResponse
+import dto.request.property.PropertyFilter
+import dto.request.property.UpdatePropertyRequest
+import model.property.Property
+import repository.property.PropertyRepository
 import utils.Constants
 
 class PropertyServiceImpl(

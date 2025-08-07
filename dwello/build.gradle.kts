@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.bundles.kotlinx)
     implementation(libs.logback.classic)
     implementation(libs.dotenv.kotlin)
+    implementation(libs.bundles.security)
 
 
     testImplementation(libs.ktor.server.test.host)

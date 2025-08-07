@@ -1,4 +1,4 @@
-package repository
+package repository.property
 
 import com.mongodb.client.model.Filters.and
 import com.mongodb.client.model.Filters.empty
@@ -11,15 +11,15 @@ import com.mongodb.client.model.Filters.regex
 import com.mongodb.client.model.Updates
 import com.mongodb.kotlin.client.coroutine.MongoCollection
 import config.DatabaseConfig
-import dto.CreatePropertyRequest
-import dto.PropertyFilter
-import dto.UpdatePropertyRequest
+import dto.request.property.CreatePropertyRequest
+import dto.request.property.PropertyFilter
+import dto.request.property.UpdatePropertyRequest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import model.Property
+import model.property.Property
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import utils.Constants

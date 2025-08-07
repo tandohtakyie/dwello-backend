@@ -1,9 +1,9 @@
-package routes
+package routes.property
 
-import dto.ApiResponse
-import dto.CreatePropertyRequest
-import dto.PropertyFilter
-import dto.UpdatePropertyRequest
+import dto.request.property.CreatePropertyRequest
+import dto.request.property.PropertyFilter
+import dto.request.property.UpdatePropertyRequest
+import dto.request.response.ApiResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.request.receive
@@ -16,7 +16,7 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import org.koin.ktor.ext.inject
-import service.PropertyService
+import service.property.PropertyService
 import utils.Constants
 
 fun Application.configurePropertyRoutes() {
