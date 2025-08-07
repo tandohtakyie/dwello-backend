@@ -1,4 +1,4 @@
-package dto.request.response
+package dto.property
 
 import kotlinx.serialization.Serializable
 

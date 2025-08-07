@@ -1,162 +1,211 @@
 package service.property
 
-import dto.request.property.CreatePropertyRequest
-import dto.request.property.PaginatedResponse
-import dto.request.property.PropertyFilter
-import dto.request.property.UpdatePropertyRequest
+import dto.property.CreatePropertyRequest
+import dto.property.PropertyResponse
+import dto.property.UpdatePropertyRequest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import model.property.Property
+import model.user.UserRole
 import repository.property.PropertyRepository
-import utils.Constants
+import repository.user.UserRepository
 
 class PropertyServiceImpl(
-    private val repository: PropertyRepository
+    private val propertyRepository: PropertyRepository,
+    private val userRepository: UserRepository, // Needed for favorites
 ) : PropertyService {
-    override suspend fun createProperty(request: CreatePropertyRequest): Result<Property> {
-        return try {
-            validateCreateRequest(request)
-            val property = repository.createProperty(request)
-            Result.success(property)
-        } catch (e: Exception) {
-            Result.failure(e)
+
+    private suspend fun Property.toResponse(currentUserId: String?): PropertyResponse {
+        val isFavorited = if (currentUserId != null) {
+            userRepository.getUserFavoritePropertyIds(currentUserId).contains(this.id)
+        } else {
+            false
+        }
+        return PropertyResponse(
+            id = this.id,
+            name = this.name,
+            type = this.type,
+            listingType = this.listingType,
+            description = this.description,
+            price = this.price,
+            location = this.location,
+            isAvailable = this.isAvailable,
+            sizeInSquareMeters = this.sizeInSquareMeters,
+            images = this.images,
+            amenities = this.amenities,
+            propertyOwnerId = this.propertyOwnerId,
+            createdAt = this.createdAt.toString(),
+            updatedAt = this.updatedAt.toString(),
+            leaseTerms = this.leaseTerms,
+            saleTerms = this.saleTerms,
+            rating = this.rating,
+            isFavorited = isFavorited
+        )
+    }
+
+    override suspend fun createProperty(
+        userId: String,
+        userRole: UserRole,
+        request: CreatePropertyRequest
+    ): Result<PropertyResponse> {
+        if (userRole != UserRole.PROPERTY_OWNER) {
+            return Result.failure(Exception("Only property owners can create property listing"))
+        }
+        val now = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+        val property = Property(
+            name = request.name,
+            type = request.type,
+            listingType = request.listingType,
+            description = request.description,
+            price = request.price,
+            location = request.location,
+            propertyOwnerId = userId, // Set from authenticated user
+            createdAt = now,
+            updatedAt = now,
+            images = request.images,
+            amenities = request.amenities,
+            leaseTerms = request.leaseTerms,
+            saleTerms = request.saleTerms,
+            sizeInSquareMeters = request.sizeInSquareMeters,
+        )
+
+        val createdProperty = propertyRepository.createProperty(property)
+        return if (createdProperty != null) {
+            Result.success(createdProperty.toResponse(userId))
+        } else {
+            Result.failure(RuntimeException("Failed to create property"))
         }
     }
 
-    override suspend fun getProperty(id: String): Result<Property> {
-        return try {
-            val property = repository.findPropertyById(id)
-                ?: return Result.failure(Exception(Constants.ErrorMessages.PROPERTY_NOT_FOUND))
-            Result.success(property)
-        } catch (e: Exception) {
-            Result.failure(e)
+    override suspend fun getPropertyById(
+        propertyId: String,
+        currentUserId: String?
+    ): Result<PropertyResponse> {
+        val property = propertyRepository.findPropertyById(propertyId)
+        return if (property != null) {
+            Result.success(property.toResponse(currentUserId))
+        } else {
+            Result.failure(NoSuchElementException("Property not found"))
         }
     }
 
     override suspend fun getAllProperties(
-        filter: PropertyFilter,
         page: Int,
-        pageSize: Int
-    ): Result<PaginatedResponse<Property>> {
-        return try {
-            // Validate pagination parameters
-            val validatedPageSize = pageSize.coerceIn(1, Constants.Defaults.MAX_PAGE_SIZE)
-            val validatedPage = page.coerceAtLeast(1)
-
-            val (properties, total) = repository.findAllProperties(
-                filter,
-                validatedPage,
-                validatedPageSize
-            )
-            val totalPages = ((total + validatedPageSize - 1) / validatedPageSize).toInt()
-
-            val response = PaginatedResponse(
-                items = properties,
-                total = total,
-                page = validatedPage,
-                pageSize = validatedPageSize,
-                totalPages = totalPages
-            )
-            Result.success(response)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        pageSize: Int,
+        currentUserId: String?
+    ): Result<List<PropertyResponse>> {
+        val (properties, _) = propertyRepository.findAllProperties(null, page, pageSize)
+        val response = properties.map { it.toResponse(currentUserId) }
+        return Result.success(response)
     }
 
     override suspend fun updateProperty(
-        id: String,
+        propertyId: String,
+        ownerId: String,
         request: UpdatePropertyRequest
-    ): Result<Property> {
-        return try {
-            validateUpdateRequest(request)
-            val property = repository.updateProperty(id, request)
-                ?: return Result.failure(Exception(Constants.ErrorMessages.PROPERTY_NOT_FOUND))
-            Result.success(property)
-        } catch (e: Exception) {
-            Result.failure(e)
+    ): Result<PropertyResponse> {
+        val existingProperty = propertyRepository.findPropertyById(propertyId)
+            ?: return Result.failure(NoSuchElementException("Property not found"))
+
+        if (existingProperty.propertyOwnerId != ownerId) {
+            return Result.failure(SecurityException("You are not the owner of this property and are not authorized to update it."))
+        }
+
+        val updatesMap = mutableMapOf<String, Any?>()
+        request.name?.let { updatesMap["name"] = it }
+        request.type?.let { updatesMap["type"] = it }
+        request.listingType?.let { updatesMap["listingType"] = it }
+        //TODO ... add all other updatable fields from UpdatePropertyRequest
+        request.price?.let { updatesMap["price"] = it }
+        request.isAvailable?.let { updatesMap["isAvailable"] = it }
+
+        if (updatesMap.isEmpty()) return Result.success(existingProperty.toResponse(ownerId))
+        val updatedProperty = propertyRepository.updateProperty(propertyId, updatesMap)
+        return if (updatedProperty != null) {
+            Result.success(updatedProperty.toResponse(ownerId))
+        } else {
+            Result.failure(RuntimeException("Failed to update property."))
         }
     }
 
-    override suspend fun deleteProperty(id: String): Result<Unit> {
-        return try {
-            val deleted = repository.deleteProperty(id)
-            if (deleted) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception(Constants.ErrorMessages.PROPERTY_NOT_FOUND))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun getPropertiesByOwner(ownerId: String): Result<List<Property>> {
-        return try {
-            val properties = repository.findPropertyByOwnerId(ownerId)
-            Result.success(properties)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun updatePropertyAvailability(
-        id: String,
-        isAvailable: Boolean
+    override suspend fun deleteProperty(
+        propertyId: String,
+        ownerId: String
     ): Result<Unit> {
-        return try {
-            val updated = repository.updatePropertyAvailability(id, isAvailable)
-            if (updated) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception(Constants.ErrorMessages.PROPERTY_NOT_FOUND))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+        val existingProperty = propertyRepository.findPropertyById(propertyId)
+            ?: return Result.failure(NoSuchElementException("Property not found."))
+
+        if (existingProperty.propertyOwnerId != ownerId) {
+            return Result.failure(SecurityException("You are not authorized to delete this property."))
+        }
+        return if (propertyRepository.deleteProperty(propertyId)) {
+            Result.success(Unit)
+        } else {
+            Result.failure(RuntimeException("Failed to delete property."))
         }
     }
 
-    override suspend fun searchProperties(query: String): Result<List<Property>> {
-        return try {
-            if (query.isBlank()) {
-                return Result.failure(Exception(Constants.ErrorMessages.SEARCH_QUERY_EMPTY))
-            }
-            val properties = repository.searchProperties(query.trim())
-            Result.success(properties)
-        } catch (e: Exception) {
-            Result.failure(e)
+    override suspend fun getPropertiesByOwner(
+        ownerId: String,
+        currentUserId: String?
+    ): Result<List<PropertyResponse>> {
+        //TODO make sure this is about the properties added by the owner with the owner id
+        // Here, currentUserId is for determining 'isFavorited' status if the owner themselves are browsing
+        val properties = propertyRepository.findPropertiesByOwnerId(ownerId)
+        val responses = properties.map { it.toResponse(currentUserId) }
+        return Result.success(responses)
+    }
+
+    override suspend fun addPropertyToFavorites(
+        userId: String,
+        propertyId: String
+    ): Result<Unit> {
+        // Check if property exists before favoriting
+        if (propertyRepository.findPropertyById(propertyId) == null) {
+            return Result.failure(NoSuchElementException("Property not found with ID: $propertyId"))
+        }
+        // Check if user exists (though typically user would be authenticated)
+        if (userRepository.findUserById(userId) == null) {
+            return Result.failure(NoSuchElementException("User not found with ID: $userId"))
+        }
+
+        return if (userRepository.addPropertyToFavorites(userId, propertyId)) {
+            Result.success(Unit)
+        } else {
+            // This could also mean it was already favorited if using addToSet and no modification occurred
+            // Or a database error. More specific error handling could be added.
+            Result.failure(RuntimeException("Failed to add property to favorites or already favorited."))
         }
     }
 
-    private fun validateCreateRequest(request: CreatePropertyRequest) {
-        if (request.name.isBlank()) throw Exception(Constants.ErrorMessages.NAME_REQUIRED)
-        if (request.type.isBlank()) throw Exception(Constants.ErrorMessages.TYPE_REQUIRED)
-        if (request.pricePerMonth < Constants.Validation.MIN_PRICE)
-            throw Exception(Constants.ErrorMessages.PRICE_POSITIVE)
-        if (request.location.isBlank()) throw Exception(Constants.ErrorMessages.LOCATION_REQUIRED)
-        if (request.propertyOwnerId.isBlank()) throw Exception(Constants.ErrorMessages.OWNER_ID_REQUIRED)
+    override suspend fun removePropertyFromFavorites(
+        userId: String,
+        propertyId: String
+    ): Result<Unit> {
+        // Check if property and user exist (optional, for robustness)
+        if (propertyRepository.findPropertyById(propertyId) == null) {
+            return Result.failure(NoSuchElementException("Property not found."))
+        }
+        if (userRepository.findUserById(userId) == null) {
+            return Result.failure(NoSuchElementException("User not found."))
+        }
 
-        request.sizeInSquareMeters?.let {
-            if (it < Constants.Validation.MIN_SIZE) throw Exception(Constants.ErrorMessages.SIZE_POSITIVE)
+        return if (userRepository.removePropertyFromFavorites(userId, propertyId)) {
+            Result.success(Unit)
+        } else {
+            Result.failure(RuntimeException("Failed to remove property from favorites or not found in favorites."))
         }
     }
 
-    private fun validateUpdateRequest(request: UpdatePropertyRequest) {
-        request.name?.let {
-            if (it.isBlank()) throw Exception(Constants.ErrorMessages.NAME_EMPTY)
+    override suspend fun getUserFavoriteProperties(userId: String): Result<List<PropertyResponse>> {
+        val favoriteIds = userRepository.getUserFavoritePropertyIds(userId)
+        if (favoriteIds.isEmpty()) {
+            return Result.success(emptyList())
         }
-        request.type?.let {
-            if (it.isBlank()) throw Exception(Constants.ErrorMessages.TYPE_EMPTY)
-        }
-        request.pricePerMonth?.let {
-            if (it < Constants.Validation.MIN_PRICE) throw Exception(Constants.ErrorMessages.PRICE_POSITIVE)
-        }
-        request.location?.let {
-            if (it.isBlank()) throw Exception(Constants.ErrorMessages.LOCATION_EMPTY)
-        }
-        request.sizeInSquareMeters?.let {
-            if (it < Constants.Validation.MIN_SIZE) throw Exception(Constants.ErrorMessages.SIZE_POSITIVE)
-        }
-        request.rating?.let {
-            if (it < Constants.Validation.MIN_RATING || it > Constants.Validation.MAX_RATING)
-                throw Exception(Constants.ErrorMessages.RATING_RANGE)
-        }
+        val properties = propertyRepository.findPropertiesByIds(favoriteIds)
+        // For favorites, they are inherently favorited by this user
+        val responses = properties.map { it.toResponse(currentUserId = userId) }
+        return Result.success(responses)
     }
 }

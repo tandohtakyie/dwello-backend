@@ -2,7 +2,7 @@ package app
 
 import config.DatabaseConfig
 import di.appModule
-import dto.request.response.ApiResponse
+import dto.property.ApiResponse
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod

@@ -1,9 +1,9 @@
 package routes.property
 
-import dto.request.property.CreatePropertyRequest
-import dto.request.property.PropertyFilter
-import dto.request.property.UpdatePropertyRequest
-import dto.request.response.ApiResponse
+import dto.property.CreatePropertyRequest
+import dto.property.PropertyFilter
+import dto.property.UpdatePropertyRequest
+import dto.property.ApiResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.request.receive
@@ -23,7 +23,7 @@ fun Application.configurePropertyRoutes() {
     val propertyService by inject<PropertyService>()
 
     routing {
-        route(path = Constants.Endpoints.PROPERTIES) {
+        route(path = Constants.Endpoints.PROPERTIES_ENDPOINT) {
 
             // Create property: POST /api/properties
             post {

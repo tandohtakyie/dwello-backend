@@ -23,12 +23,13 @@ object Constants {
     // Database collection names
     object Collections {
         const val PROPERTIES = "properties"
+        const val USERS = "users"
     }
 
     // API endpoints
     object Endpoints {
         const val API_BASE = "/api"
-        const val PROPERTIES = "$API_BASE/properties"
+        const val PROPERTIES_ENDPOINT = "$API_BASE/properties"
         const val SEARCH = "/search"
         const val AVAILABILITY = "/availability"
         const val OWNER = "/owner"
@@ -66,6 +67,9 @@ object Constants {
         const val OWNER_ID_REQUIRED = "Property owner ID is required"
         const val SIZE_POSITIVE = "Size must be positive"
         const val RATING_RANGE = "Rating must be between 0 and 5"
+
+        // Authentication messages
+        const val JWT_CONFIG_NOT_INITIALIZED = "JwtConfig not initialized"
     }
 
     // Success messages
@@ -82,5 +86,18 @@ object Constants {
         const val MAX_RATING = 5f
         const val MIN_PRICE = 1
         const val MIN_SIZE = 0.1
+    }
+
+    object Authentication {
+        const val USER_ROLE = "user"
+        const val ADMIN_ROLE = "admin"
+        const val AUTHENTICATION = "Authentication"
+        const val USER_ID = "userId"
+        const val ROLE = "role"
+        const val EMAIL = "email"
+        const val APP_ISSUER = "dwello-backend"
+
+
+
     }
 }

@@ -10,6 +10,7 @@ kotlinx-serialization = "1.6.2"
 dotenv = "6.4.1"
 bcrypt = "0.10.2"
 jwt = "0.4.0"
+jbcrypt = "0.4"
 
 
 
@@ -50,6 +51,7 @@ dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "d
 # jwt and encryption
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
 jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
+jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
 
 [bundles]
 ktor-server = [
@@ -81,8 +83,9 @@ kotlinx = [
 ]
 
 security = [
-    "bcrypt",
-    "jwt"
+#    "bcrypt",
+#    "jwt",
+    "jbcrypt"
 ]
 
 [plugins]

@@ -33,8 +33,8 @@ class DatabaseConfigImpl : DatabaseConfig {
 
         val customCodecRegistry: CodecRegistry = CodecRegistries.fromRegistries(
             MongoClientSettings.getDefaultCodecRegistry(), // Default codecs for primitives, etc.
-            CodecRegistries.fromCodecs(localDateTimeCodec), // Your custom LocalDateTime codec
-            CodecRegistries.fromProviders(pojoCodecProvider) // For your 'Property' class and others
+            CodecRegistries.fromCodecs(localDateTimeCodec), // custom LocalDateTime codec
+            CodecRegistries.fromProviders(pojoCodecProvider) // For 'Property' class and others
         )
 
         val settings = MongoClientSettings.builder()
