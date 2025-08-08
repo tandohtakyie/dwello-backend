@@ -1,5 +1,6 @@
 package app
 
+import auth.configureSecurity
 import config.DatabaseConfig
 import di.appModule
 import dto.property.ApiResponse
@@ -22,6 +23,7 @@ import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
 import routes.property.configurePropertyRoutes
+import serialization.configureSerialization
 import utils.Constants
 
 fun main(args: Array<String>) {
@@ -45,6 +47,8 @@ fun Application.module() {
     configureStatusPages()
     configurePropertyRoutes()
     configureShutdownHook()
+    configureSecurity()
+    configureSerialization()
 }
 
 

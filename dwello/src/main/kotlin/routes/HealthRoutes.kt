@@ -1,4 +1,0 @@
-package routes
-
-class HealthRoutes {
-}

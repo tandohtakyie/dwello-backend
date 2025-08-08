@@ -101,7 +101,7 @@ class PropertyRepositoryImpl(
 
     override suspend fun updateProperty(
         id: String,
-        updates: Map<String, Any>
+        updates: Map<String, Any?>
     ): Property? {
         if (!ObjectId.isValid(id)) return null
 
