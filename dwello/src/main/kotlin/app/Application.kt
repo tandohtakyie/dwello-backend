@@ -12,6 +12,7 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
+import io.ktor.server.application.log
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -22,7 +23,8 @@ import kotlinx.serialization.json.Json
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
-import routes.property.configurePropertyRoutes
+import org.koin.mp.KoinPlatformTools
+import routes.configureRouting
 import serialization.configureSerialization
 import utils.Constants
 
@@ -45,10 +47,10 @@ fun Application.module() {
     configureContentNegotiation()
     configureCORS()
     configureStatusPages()
-    configurePropertyRoutes()
-    configureShutdownHook()
     configureSecurity()
     configureSerialization()
+    configureRouting()
+    configureShutdownHook()
 }
 
 
@@ -133,9 +135,17 @@ fun Application.configureStatusPages() {
  * Configure application shutdown hook to properly close database connections
  */
 fun Application.configureShutdownHook() {
-    environment.monitor.subscribe(ApplicationStopping) {
-        val databaseConfig by inject<DatabaseConfig>()
-        databaseConfig.close()
+    this.monitor.subscribe(ApplicationStopping) {
+        log.info("KTOR_APP_STOP_EVENT: ApplicationStopping event received. Closing resources.")
+        try {
+            val koin = KoinPlatformTools.defaultContext().get()
+            val databaseConfig = koin.get<DatabaseConfig>()
+
+            databaseConfig.close()
+            log.info("KTOR_APP_STOP_EVENT: Database connection closed successfully.")
+        } catch (e: Exception) {
+            log.error("KTOR_APP_STOP_EVENT: Error closing database connection during shutdown.", e)
+        }
     }
 }
 

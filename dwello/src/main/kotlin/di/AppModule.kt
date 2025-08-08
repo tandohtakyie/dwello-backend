@@ -15,10 +15,7 @@ import service.user.auth.AuthService
 
 val appModule = module {
     single<DatabaseConfig> { DatabaseConfigImpl() }
-    single {
-        val secret = getProperty<String>("JWT_SECRET")
-        JwtConfig.getInstance(secret)
-    }
+    single { JwtConfig.instance }
     single { PasswordHasher } // the object
 
     single<UserRepository> { UserRepositoryImpl(get()) }
